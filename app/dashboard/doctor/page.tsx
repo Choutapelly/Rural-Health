@@ -121,6 +121,12 @@ export default function DoctorDashboard() {
                 Symptom Visualization
               </Button>
             </Link>
+            <Link href="/dashboard/doctor/patient-timeline?patientId=p1">
+              <Button variant="outline" size="sm">
+                <Calendar className="h-4 w-4 mr-2" />
+                Patient Timeline
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" className="relative">
               <Bell className="h-4 w-4" />
               {notifications.some((n) => !n.read) && (
