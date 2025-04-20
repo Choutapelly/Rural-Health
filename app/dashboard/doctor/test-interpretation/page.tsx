@@ -1,303 +1,454 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { DashboardShell } from "@/components/dashboard-shell"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { CheckCircle2, FileText } from "lucide-react"
-import { TestResultInterpretation } from "@/components/test-result-interpretation"
-import { generateMockMedicalRecords } from "@/utils/medical-records"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { useState } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-
-// Mock data
-const mockPatients = [
-  { id: "p1", name: "John Smith" },
-  { id: "p2", name: "Maria Gonzalez" },
-  { id: "p3", name: "Raj Patel" },
-]
+import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
+import {
+  AlertCircle,
+  ArrowUpDown,
+  Brain,
+  Calendar,
+  ClipboardList,
+  Download,
+  FileText,
+  Filter,
+  History,
+  Info,
+  Microscope,
+  Search,
+  Share2,
+  User,
+} from "lucide-react"
+import { AIDiagnosticSuggestions } from "@/components/ai-diagnostic-suggestions"
+import { sampleTestResults, samplePatientData } from "@/utils/sample-patient-data"
 
 export default function TestInterpretationPage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedPatientId, setSelectedPatientId] = useState("p1")
-  const [patientData, setPatientData] = useState<any>(null)
-  const [testResults, setTestResults] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState("results")
+  const [selectedTest, setSelectedTest] = useState<any>(null)
   const [clinicalNotes, setClinicalNotes] = useState("")
-  const [notesSaved, setNotesSaved] = useState(false)
 
-  useEffect(() => {
-    // Simulate loading data
-    setIsLoading(true)
-    setNotesSaved(false)
-
-    setTimeout(() => {
-      // Generate mock medical records
-      const records = generateMockMedicalRecords(
-        mockPatients.map((p) => p.id),
-        mockPatients.map((p) => p.name),
-      )
-
-      const patientRecord = records[selectedPatientId]
-      setPatientData(patientRecord)
-
-      // Format lab results for the component
-      const formattedResults = patientRecord.labResults.map((lab: any) => {
-        // Determine if the result is critical (significantly abnormal)
-        const isCritical =
-          lab.abnormal &&
-          ((lab.name === "Glucose" && Number(lab.value) > 300) ||
-            (lab.name === "Potassium" && (Number(lab.value) < 2.5 || Number(lab.value) > 6.5)) ||
-            (lab.name === "Sodium" && (Number(lab.value) < 125 || Number(lab.value) > 155)) ||
-            (lab.name === "Hemoglobin" && Number(lab.value) < 7) ||
-            (lab.name === "White Blood Cell Count" && Number(lab.value) > 20000) ||
-            (lab.name === "Platelet Count" && Number(lab.value) < 50000) ||
-            (lab.name === "Troponin" && Number(lab.value) > 0.5))
-
-        // Determine trend based on previous results (mock data)
-        const trend = Math.random() > 0.7 ? (Math.random() > 0.5 ? "increasing" : "decreasing") : "stable"
-
-        // Generate previous results (mock data)
-        const previousResults = []
-        if (Math.random() > 0.3) {
-          const count = Math.floor(Math.random() * 3) + 1
-          for (let i = 0; i < count; i++) {
-            const prevDate = new Date(lab.date)
-            prevDate.setMonth(prevDate.getMonth() - (i + 1))
-
-            // Generate a value that follows the trend
-            let prevValue = Number(lab.value)
-            if (trend === "increasing") {
-              prevValue = prevValue * (0.85 + Math.random() * 0.1) // 15-25% lower
-            } else if (trend === "decreasing") {
-              prevValue = prevValue * (1.15 + Math.random() * 0.1) // 15-25% higher
-            } else {
-              prevValue = prevValue * (0.95 + Math.random() * 0.1) // ±5%
-            }
-
-            previousResults.push({
-              value: prevValue.toFixed(lab.value.toString().includes(".") ? 1 : 0),
-              date: prevDate,
-            })
-          }
-        }
-
-        // Determine category based on test name
-        let category = "General"
-        if (["Hemoglobin", "White Blood Cell Count", "Platelet Count"].includes(lab.name)) {
-          category = "Hematology"
-        } else if (["Glucose", "HbA1c"].includes(lab.name)) {
-          category = "Diabetes"
-        } else if (["Total Cholesterol", "LDL Cholesterol", "HDL Cholesterol", "Triglycerides"].includes(lab.name)) {
-          category = "Lipids"
-        } else if (["Creatinine", "eGFR", "BUN"].includes(lab.name)) {
-          category = "Renal"
-        } else if (["ALT", "AST", "Bilirubin", "Alkaline Phosphatase"].includes(lab.name)) {
-          category = "Liver"
-        } else if (
-          ["Sodium", "Potassium", "Chloride", "Bicarbonate", "Calcium", "Magnesium", "Phosphorus"].includes(lab.name)
-        ) {
-          category = "Electrolytes"
-        } else if (["TSH", "Free T4", "Free T3"].includes(lab.name)) {
-          category = "Thyroid"
-        } else if (["Vitamin D", "Vitamin B12", "Folate", "Ferritin"].includes(lab.name)) {
-          category = "Vitamins & Minerals"
-        } else if (["Troponin", "BNP", "CK-MB"].includes(lab.name)) {
-          category = "Cardiac"
-        } else if (["CRP", "ESR", "Procalcitonin"].includes(lab.name)) {
-          category = "Inflammatory"
-        }
-
-        return {
-          id: lab.id,
-          name: lab.name,
-          category,
-          value: lab.value,
-          unit: lab.unit,
-          referenceRange: lab.referenceRange || "Not established",
-          abnormal: lab.abnormal,
-          critical: isCritical,
-          date: lab.date,
-          trend,
-          previousResults: previousResults.length > 0 ? previousResults : undefined,
-        }
-      })
-
-      // Add some additional test results for variety
-      if (selectedPatientId === "p1") {
-        formattedResults.push(
-          {
-            id: "tr1",
-            name: "Troponin",
-            category: "Cardiac",
-            value: "0.8",
-            unit: "ng/mL",
-            referenceRange: "<0.04",
-            abnormal: true,
-            critical: true,
-            date: new Date(new Date().setDate(new Date().getDate() - 1)),
-            trend: "increasing",
-            previousResults: [
-              { value: "0.3", date: new Date(new Date().setDate(new Date().getDate() - 2)) },
-              { value: "0.01", date: new Date(new Date().setDate(new Date().getDate() - 30)) },
-            ],
-          },
-          {
-            id: "tr2",
-            name: "BNP",
-            category: "Cardiac",
-            value: "850",
-            unit: "pg/mL",
-            referenceRange: "<100",
-            abnormal: true,
-            critical: false,
-            date: new Date(new Date().setDate(new Date().getDate() - 1)),
-            trend: "increasing",
-          },
-        )
-      } else if (selectedPatientId === "p2") {
-        formattedResults.push(
-          {
-            id: "tr3",
-            name: "TSH",
-            category: "Thyroid",
-            value: "0.1",
-            unit: "mIU/L",
-            referenceRange: "0.4-4.5",
-            abnormal: true,
-            critical: false,
-            date: new Date(new Date().setDate(new Date().getDate() - 3)),
-            trend: "decreasing",
-            previousResults: [
-              { value: "0.3", date: new Date(new Date().setDate(new Date().getDate() - 90)) },
-              { value: "1.2", date: new Date(new Date().setDate(new Date().getDate() - 180)) },
-            ],
-          },
-          {
-            id: "tr4",
-            name: "Free T4",
-            category: "Thyroid",
-            value: "2.8",
-            unit: "ng/dL",
-            referenceRange: "0.8-1.8",
-            abnormal: true,
-            critical: false,
-            date: new Date(new Date().setDate(new Date().getDate() - 3)),
-            trend: "increasing",
-          },
-        )
-      } else if (selectedPatientId === "p3") {
-        formattedResults.push(
-          {
-            id: "tr5",
-            name: "CRP",
-            category: "Inflammatory",
-            value: "85",
-            unit: "mg/L",
-            referenceRange: "<10",
-            abnormal: true,
-            critical: false,
-            date: new Date(new Date().setDate(new Date().getDate() - 2)),
-            trend: "increasing",
-            previousResults: [
-              { value: "45", date: new Date(new Date().setDate(new Date().getDate() - 7)) },
-              { value: "12", date: new Date(new Date().setDate(new Date().getDate() - 14)) },
-            ],
-          },
-          {
-            id: "tr6",
-            name: "ESR",
-            category: "Inflammatory",
-            value: "65",
-            unit: "mm/hr",
-            referenceRange: "<20",
-            abnormal: true,
-            critical: false,
-            date: new Date(new Date().setDate(new Date().getDate() - 2)),
-            trend: "stable",
-          },
-        )
-      }
-
-      setTestResults(formattedResults)
-      setClinicalNotes("")
-      setIsLoading(false)
-    }, 1000)
-  }, [selectedPatientId])
-
-  const handleAddToNotes = (interpretation: string) => {
-    setClinicalNotes((prev) => prev + "\n\n" + interpretation)
-  }
-
-  const handleSaveNotes = () => {
-    // In a real application, this would save the notes to the database
-    console.log("Saving clinical notes:", clinicalNotes)
-    setNotesSaved(true)
-
-    // Hide the success message after 3 seconds
-    setTimeout(() => {
-      setNotesSaved(false)
-    }, 3000)
+  // Handle adding AI suggestions to clinical notes
+  const handleAddToNotes = (suggestion: string) => {
+    setClinicalNotes((prev) => prev + "\n\n" + suggestion)
   }
 
   return (
-    <>
-      <DashboardHeader />
-      <DashboardShell>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Test Result Interpretation</h1>
-          <div className="flex items-center gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="patient-select">Select Patient</Label>
-              <Select value={selectedPatientId} onValueChange={setSelectedPatientId} disabled={isLoading}>
-                <SelectTrigger id="patient-select" className="w-[200px]">
-                  <SelectValue placeholder="Select a patient" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockPatients.map((patient) => (
-                    <SelectItem key={patient.id} value={patient.id}>
-                      {patient.name}
-                    </SelectItem>
+    <div className="container mx-auto py-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Test Result Interpretation</h1>
+          <p className="text-muted-foreground">Analyze and interpret diagnostic test results with clinical context</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1">
+            <Share2 className="h-4 w-4" />
+            Share
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1">
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Patient Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium text-sm">Demographics</h3>
+                  <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+                    <div className="text-muted-foreground">Age</div>
+                    <div>{samplePatientData.demographics?.age} years</div>
+                    <div className="text-muted-foreground">Sex</div>
+                    <div className="capitalize">{samplePatientData.demographics?.sex}</div>
+                    <div className="text-muted-foreground">BMI</div>
+                    <div>{samplePatientData.demographics?.bmi} kg/m²</div>
+                    <div className="text-muted-foreground">Smoking</div>
+                    <div className="capitalize">{samplePatientData.demographics?.smokingStatus}</div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="font-medium text-sm flex items-center justify-between">
+                    <span>Active Conditions</span>
+                    <Badge variant="outline" className="font-normal">
+                      {
+                        samplePatientData.history.filter(
+                          (item) => item.category === "condition" && item.status === "active",
+                        ).length
+                      }
+                    </Badge>
+                  </h3>
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {samplePatientData.history
+                      .filter((item) => item.category === "condition" && item.status === "active")
+                      .map((condition) => (
+                        <li key={condition.id} className="flex items-center gap-1">
+                          <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                          {condition.name}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="font-medium text-sm flex items-center justify-between">
+                    <span>Current Medications</span>
+                    <Badge variant="outline" className="font-normal">
+                      {
+                        samplePatientData.history.filter(
+                          (item) => item.category === "medication" && item.status === "active",
+                        ).length
+                      }
+                    </Badge>
+                  </h3>
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {samplePatientData.history
+                      .filter((item) => item.category === "medication" && item.status === "active")
+                      .map((medication) => (
+                        <li key={medication.id} className="flex items-center gap-1">
+                          <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                          {medication.name}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="font-medium text-sm">Recent Procedures</h3>
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {samplePatientData.history
+                      .filter((item) => item.category === "procedure")
+                      .slice(0, 3)
+                      .map((procedure) => (
+                        <li key={procedure.id} className="flex items-start gap-1">
+                          <Calendar className="h-3.5 w-3.5 mt-0.5 text-muted-foreground" />
+                          <div>
+                            <div>{procedure.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(procedure.dateRecorded!).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                Test Panel
+              </CardTitle>
+              <CardDescription>Comprehensive Metabolic Panel + Cardiac Markers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm text-muted-foreground">
+                  Collected: {new Date(sampleTestResults[0].date).toLocaleDateString()}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Search className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="space-y-1">
+                  {sampleTestResults.map((test) => (
+                    <div
+                      key={test.id}
+                      className={`p-2 rounded-md cursor-pointer transition-colors ${
+                        selectedTest?.id === test.id
+                          ? "bg-primary/10"
+                          : test.abnormal
+                            ? "bg-red-50 hover:bg-red-100"
+                            : "hover:bg-muted"
+                      }`}
+                      onClick={() => setSelectedTest(test)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-sm">{test.name}</div>
+                        <div className="flex items-center gap-1">
+                          {test.abnormal && (
+                            <AlertCircle
+                              className={`h-3.5 w-3.5 ${test.critical ? "text-red-600" : "text-amber-600"}`}
+                            />
+                          )}
+                          <span
+                            className={`text-sm ${
+                              test.abnormal ? (test.critical ? "text-red-600 font-medium" : "text-amber-600") : ""
+                            }`}
+                          >
+                            {test.value} {test.unit}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Reference: {test.referenceRange}</span>
+                      </div>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
 
-        {notesSaved && (
-          <Alert className="bg-green-50 border-green-200 text-green-800 mt-4">
-            <CheckCircle2 className="h-4 w-4" />
-            <AlertTitle>Notes saved successfully</AlertTitle>
-            <AlertDescription>The clinical notes have been saved to the patient's medical record.</AlertDescription>
-          </Alert>
-        )}
-
-        {isLoading ? (
-          <div className="grid gap-4 mt-4">
-            <Skeleton className="h-[500px] w-full" />
-          </div>
-        ) : (
-          <Tabs defaultValue="interpretation" className="mt-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="interpretation">Test Interpretation</TabsTrigger>
-              <TabsTrigger value="notes">Clinical Notes</TabsTrigger>
+        <div className="md:col-span-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid grid-cols-3">
+              <TabsTrigger value="results" className="flex items-center gap-1">
+                <Microscope className="h-4 w-4" />
+                <span>Test Results</span>
+              </TabsTrigger>
+              <TabsTrigger value="ai-suggestions" className="flex items-center gap-1">
+                <Brain className="h-4 w-4" />
+                <span>AI Suggestions</span>
+              </TabsTrigger>
+              <TabsTrigger value="clinical-notes" className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                <span>Clinical Notes</span>
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="interpretation" className="space-y-4 pt-4">
-              <TestResultInterpretation
-                patientId={selectedPatientId}
-                patientName={patientData.patientName}
-                testResults={testResults}
+            <TabsContent value="results" className="mt-6">
+              {selectedTest ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>{selectedTest.name}</span>
+                      {selectedTest.abnormal && (
+                        <Badge
+                          variant="outline"
+                          className={`${
+                            selectedTest.critical
+                              ? "bg-red-100 text-red-800 border-red-200"
+                              : "bg-amber-100 text-amber-800 border-amber-200"
+                          }`}
+                        >
+                          {selectedTest.critical ? "Critical" : "Abnormal"}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>
+                      Collected on {new Date(selectedTest.date).toLocaleDateString()} at{" "}
+                      {new Date(selectedTest.date).toLocaleTimeString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm text-muted-foreground">Result</div>
+                          <div className="text-2xl font-bold">
+                            {selectedTest.value} <span className="text-base font-normal">{selectedTest.unit}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Reference Range</div>
+                          <div>{selectedTest.referenceRange}</div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <h3 className="font-medium mb-2">Clinical Interpretation</h3>
+                        <div className="p-3 bg-muted rounded-md">
+                          {selectedTest.name === "Troponin" && (
+                            <div className="space-y-2">
+                              <p>
+                                Troponin is elevated above the reference range, indicating myocardial injury. This may
+                                be seen in:
+                              </p>
+                              <ul className="list-disc pl-5 space-y-1">
+                                <li>Acute coronary syndrome</li>
+                                <li>Myocarditis</li>
+                                <li>Cardiac contusion</li>
+                                <li>Severe heart failure</li>
+                                <li>Pulmonary embolism</li>
+                              </ul>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Correlation with clinical presentation, ECG findings, and serial measurements is
+                                recommended.
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedTest.name === "BNP" && (
+                            <div className="space-y-2">
+                              <p>
+                                BNP is elevated above the reference range, suggesting cardiac stress. This may be seen
+                                in:
+                              </p>
+                              <ul className="list-disc pl-5 space-y-1">
+                                <li>Heart failure</li>
+                                <li>Acute coronary syndrome</li>
+                                <li>Pulmonary hypertension</li>
+                                <li>Renal dysfunction</li>
+                              </ul>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                BNP levels correlate with heart failure severity and can be used for monitoring therapy.
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedTest.name === "Glucose" && (
+                            <div className="space-y-2">
+                              <p>
+                                Fasting glucose is elevated above the reference range, indicating hyperglycemia. This
+                                may be seen in:
+                              </p>
+                              <ul className="list-disc pl-5 space-y-1">
+                                <li>Diabetes mellitus</li>
+                                <li>Prediabetes</li>
+                                <li>Stress hyperglycemia</li>
+                                <li>Medication effect (steroids, thiazides)</li>
+                              </ul>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Values ≥126 mg/dL are consistent with diabetes if confirmed on repeat testing.
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedTest.name === "HbA1c" && (
+                            <div className="space-y-2">
+                              <p>
+                                HbA1c is elevated above the reference range, indicating chronic hyperglycemia. This
+                                reflects average blood glucose over the past 2-3 months.
+                              </p>
+                              <ul className="list-disc pl-5 space-y-1">
+                                <li>5.7-6.4%: Prediabetes</li>
+                                <li>≥6.5%: Diabetes mellitus</li>
+                              </ul>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Current value of 7.2% suggests suboptimal glycemic control in a patient with diabetes.
+                                Target is typically &lt;7.0% for most adults with diabetes.
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedTest.name === "Creatinine" && (
+                            <div className="space-y-2">
+                              <p>
+                                Creatinine is elevated above the reference range, indicating reduced renal function.
+                                This may be seen in:
+                              </p>
+                              <ul className="list-disc pl-5 space-y-1">
+                                <li>Chronic kidney disease</li>
+                                <li>Acute kidney injury</li>
+                                <li>Dehydration</li>
+                                <li>Medication effect (NSAIDs, ACE inhibitors)</li>
+                              </ul>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Consider calculating eGFR for better assessment of renal function.
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedTest.name === "eGFR" && (
+                            <div className="space-y-2">
+                              <p>
+                                eGFR is reduced below the reference range, indicating impaired renal function. eGFR
+                                staging:
+                              </p>
+                              <ul className="list-disc pl-5 space-y-1">
+                                <li>≥90 mL/min/1.73m²: Normal or high</li>
+                                <li>60-89 mL/min/1.73m²: Mildly decreased</li>
+                                <li>45-59 mL/min/1.73m²: Mildly to moderately decreased</li>
+                                <li>30-44 mL/min/1.73m²: Moderately to severely decreased</li>
+                                <li>15-29 mL/min/1.73m²: Severely decreased</li>
+                                <li>&lt;15 mL/min/1.73m²: Kidney failure</li>
+                              </ul>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Current value of 58 mL/min/1.73m² indicates mildly to moderately decreased renal
+                                function (Stage 3a CKD if persistent for &gt;3 months).
+                              </p>
+                            </div>
+                          )}
+
+                          {!["Troponin", "BNP", "Glucose", "HbA1c", "Creatinine", "eGFR"].includes(
+                            selectedTest.name,
+                          ) && (
+                            <div className="text-muted-foreground italic">
+                              Detailed interpretation not available for this test.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="font-medium mb-2">Historical Trend</h3>
+                        <div className="h-40 bg-muted rounded-md flex items-center justify-center">
+                          <div className="text-muted-foreground">Historical data visualization would appear here</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Button variant="outline" className="gap-1">
+                          <History className="h-4 w-4" />
+                          View History
+                        </Button>
+                        <Button variant="outline" className="gap-1">
+                          <Info className="h-4 w-4" />
+                          Test Information
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                    <Microscope className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Select a Test Result</h3>
+                    <p className="text-muted-foreground max-w-md">
+                      Select a test result from the panel on the left to view detailed interpretation and clinical
+                      context.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="ai-suggestions" className="mt-6">
+              <AIDiagnosticSuggestions
+                testResults={sampleTestResults}
+                patientData={samplePatientData}
                 onAddToNotes={handleAddToNotes}
               />
             </TabsContent>
 
-            <TabsContent value="notes" className="space-y-4 pt-4">
+            <TabsContent value="clinical-notes" className="mt-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -307,21 +458,27 @@ export default function TestInterpretationPage() {
                   <CardDescription>Document your interpretation and clinical assessment</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Textarea
-                    placeholder="Enter your clinical notes and assessment here..."
-                    className="min-h-[300px]"
-                    value={clinicalNotes}
-                    onChange={(e) => setClinicalNotes(e.target.value)}
-                  />
-                  <Button onClick={handleSaveNotes} className="mt-4">
-                    Save Notes
-                  </Button>
+                  <div className="space-y-4">
+                    <textarea
+                      className="w-full min-h-[400px] p-4 rounded-md border resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Enter your clinical notes and assessment here..."
+                      value={clinicalNotes}
+                      onChange={(e) => setClinicalNotes(e.target.value)}
+                    />
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">Last updated: {new Date().toLocaleString()}</div>
+                      <Button className="gap-1">
+                        <FileText className="h-4 w-4" />
+                        Save Notes
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
-        )}
-      </DashboardShell>
-    </>
+        </div>
+      </div>
+    </div>
   )
 }
