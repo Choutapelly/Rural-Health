@@ -10,10 +10,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { EnhancedSymptomAnalyzer } from "@/components/enhanced-symptom-analyzer"
 
 export function RequestConsultationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [activeTab, setActiveTab] = useState<string>("basic")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,94 +61,107 @@ export function RequestConsultationForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div className="grid gap-2">
-          <Label htmlFor="symptoms">What symptoms are you experiencing?</Label>
-          <Textarea
-            id="symptoms"
-            placeholder="Please describe your symptoms in detail"
-            className="min-h-[120px]"
-            required
-          />
-        </div>
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="basic">Basic Form</TabsTrigger>
+        <TabsTrigger value="advanced">Advanced Symptom Analysis</TabsTrigger>
+      </TabsList>
 
-        <div className="grid gap-2">
-          <Label htmlFor="duration">How long have you been experiencing these symptoms?</Label>
-          <Input id="duration" placeholder="e.g., 3 days, 2 weeks" required />
-        </div>
-
-        <div className="grid gap-2">
-          <Label>How severe are your symptoms?</Label>
-          <RadioGroup defaultValue="medium">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="mild" id="mild" />
-              <Label htmlFor="mild">Mild - Noticeable but not interfering with daily activities</Label>
+      <TabsContent value="basic">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="symptoms">What symptoms are you experiencing?</Label>
+              <Textarea
+                id="symptoms"
+                placeholder="Please describe your symptoms in detail"
+                className="min-h-[120px]"
+                required
+              />
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="medium" id="medium" />
-              <Label htmlFor="medium">Moderate - Somewhat interfering with daily activities</Label>
+
+            <div className="grid gap-2">
+              <Label htmlFor="duration">How long have you been experiencing these symptoms?</Label>
+              <Input id="duration" placeholder="e.g., 3 days, 2 weeks" required />
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="severe" id="severe" />
-              <Label htmlFor="severe">Severe - Significantly interfering with daily activities</Label>
+
+            <div className="grid gap-2">
+              <Label>How severe are your symptoms?</Label>
+              <RadioGroup defaultValue="medium">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="mild" id="mild" />
+                  <Label htmlFor="mild">Mild - Noticeable but not interfering with daily activities</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="medium" id="medium" />
+                  <Label htmlFor="medium">Moderate - Somewhat interfering with daily activities</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="severe" id="severe" />
+                  <Label htmlFor="severe">Severe - Significantly interfering with daily activities</Label>
+                </div>
+              </RadioGroup>
             </div>
-          </RadioGroup>
-        </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="specialty">What type of doctor would you like to consult with?</Label>
-          <Select>
-            <SelectTrigger id="specialty">
-              <SelectValue placeholder="Select specialty" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="general">General Practitioner</SelectItem>
-              <SelectItem value="cardiology">Cardiologist</SelectItem>
-              <SelectItem value="dermatology">Dermatologist</SelectItem>
-              <SelectItem value="pediatrics">Pediatrician</SelectItem>
-              <SelectItem value="psychiatry">Psychiatrist</SelectItem>
-              <SelectItem value="neurology">Neurologist</SelectItem>
-              <SelectItem value="orthopedics">Orthopedic Surgeon</SelectItem>
-              <SelectItem value="gynecology">Gynecologist</SelectItem>
-              <SelectItem value="ophthalmology">Ophthalmologist</SelectItem>
-              <SelectItem value="ent">ENT Specialist</SelectItem>
-              <SelectItem value="unsure">Not sure (let system assign)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="grid gap-2">
+              <Label htmlFor="specialty">What type of doctor would you like to consult with?</Label>
+              <Select>
+                <SelectTrigger id="specialty">
+                  <SelectValue placeholder="Select specialty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General Practitioner</SelectItem>
+                  <SelectItem value="cardiology">Cardiologist</SelectItem>
+                  <SelectItem value="dermatology">Dermatologist</SelectItem>
+                  <SelectItem value="pediatrics">Pediatrician</SelectItem>
+                  <SelectItem value="psychiatry">Psychiatrist</SelectItem>
+                  <SelectItem value="neurology">Neurologist</SelectItem>
+                  <SelectItem value="orthopedics">Orthopedic Surgeon</SelectItem>
+                  <SelectItem value="gynecology">Gynecologist</SelectItem>
+                  <SelectItem value="ophthalmology">Ophthalmologist</SelectItem>
+                  <SelectItem value="ent">ENT Specialist</SelectItem>
+                  <SelectItem value="unsure">Not sure (let system assign)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="medical-history">Relevant Medical History</Label>
-          <Textarea
-            id="medical-history"
-            placeholder="Please share any relevant medical history, conditions, or allergies"
-            className="min-h-[100px]"
-          />
-        </div>
+            <div className="grid gap-2">
+              <Label htmlFor="medical-history">Relevant Medical History</Label>
+              <Textarea
+                id="medical-history"
+                placeholder="Please share any relevant medical history, conditions, or allergies"
+                className="min-h-[100px]"
+              />
+            </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="medications">Current Medications</Label>
-          <Input id="medications" placeholder="List any medications you are currently taking" />
-        </div>
+            <div className="grid gap-2">
+              <Label htmlFor="medications">Current Medications</Label>
+              <Input id="medications" placeholder="List any medications you are currently taking" />
+            </div>
 
-        <div className="flex items-start space-x-2">
-          <Checkbox id="urgent" />
-          <div className="grid gap-1.5 leading-none">
-            <Label
-              htmlFor="urgent"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              This is urgent (within 24 hours)
-            </Label>
-            <p className="text-sm text-muted-foreground">Check this box if you need immediate medical attention</p>
+            <div className="flex items-start space-x-2">
+              <Checkbox id="urgent" />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="urgent"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  This is urgent (within 24 hours)
+                </Label>
+                <p className="text-sm text-muted-foreground">Check this box if you need immediate medical attention</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Submitting..." : "Submit Request"}
-      </Button>
-    </form>
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Request"}
+          </Button>
+        </form>
+      </TabsContent>
+
+      <TabsContent value="advanced">
+        <EnhancedSymptomAnalyzer />
+      </TabsContent>
+    </Tabs>
   )
 }

@@ -10,6 +10,7 @@ import { Calendar, Clock, FileText, MessageSquare, Video, Bell, User, LogOut } f
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { RequestConsultationForm } from "@/components/request-consultation-form"
+import { SymptomTracker } from "@/components/symptom-tracker"
 
 export default function PatientDashboard() {
   const [notifications, setNotifications] = useState([
@@ -173,6 +174,7 @@ export default function PatientDashboard() {
             <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="request">Request Consultation</TabsTrigger>
+            <TabsTrigger value="symptoms">Symptom Tracker</TabsTrigger>
           </TabsList>
 
           <TabsContent value="appointments" className="space-y-4">
@@ -369,6 +371,10 @@ export default function PatientDashboard() {
                 <RequestConsultationForm />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="symptoms" className="space-y-4">
+            <SymptomTracker />
           </TabsContent>
         </Tabs>
       </DashboardShell>
