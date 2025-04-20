@@ -13,7 +13,10 @@ import { SymptomTrendChart } from "@/components/symptom-trend-chart"
 import { SymptomHeatmap } from "@/components/symptom-heatmap"
 import { SymptomCorrelationChart } from "@/components/symptom-correlation-chart"
 import { SymptomDetailsTable } from "@/components/symptom-details-table"
+import { MedicalRecordSummary } from "@/components/medical-record-summary"
+import { ConditionSymptomCorrelation } from "@/components/condition-symptom-correlation"
 import { type PatientSymptomData, type TimeRange, generateMockPatientData } from "@/utils/chart-data"
+import type { PatientMedicalRecord } from "@/utils/medical-records"
 import {
   Download,
   FileText,
@@ -33,6 +36,8 @@ import {
   Printer,
   FileDown,
   Share2,
+  ClipboardList,
+  Activity,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -43,6 +48,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function DoctorSymptomDashboard() {
   const [patients, setPatients] = useState<PatientSymptomData[]>([])
@@ -56,6 +62,10 @@ export function DoctorSymptomDashboard() {
   const [showFilters, setShowFilters] = useState(false)
   const [severityFilter, setSeverityFilter] = useState<string>("all")
   const [dateRangeFilter, setDateRangeFilter] = useState<[Date | null, Date | null]>([null, null])
+
+  // Medical records state
+  const [medicalRecords, setMedicalRecords] = useState<Record<string, PatientMedicalRecord>>({})
+  const [isLoadingMedicalRecords, setIsLoadingMedicalRecords] = useState(false)
 
   // Load patient data
   useEffect(() => {
@@ -77,7 +87,38 @@ export function DoctorSymptomDashboard() {
 
     // Reset selected symptoms when patients change
     setSelectedSymptoms([])
+
+    // Fetch medical records for selected patients
+    if (selected.length > 0) {
+      fetchMedicalRecords(selected.map((p) => p.patientId))
+    }
   }, [selectedPatientIds, patients])
+
+  // Fetch medical records
+  const fetchMedicalRecords = async (patientIds: string[]) => {
+    setIsLoadingMedicalRecords(true)
+
+    try {
+      // In a real app, we would fetch records for each patient
+      // For now, we'll fetch all records and filter
+      const response = await fetch("/api/medical-records")
+      const data = await response.json()
+
+      // Filter to only include selected patients
+      const filteredRecords: Record<string, PatientMedicalRecord> = {}
+      patientIds.forEach((id) => {
+        if (data[id]) {
+          filteredRecords[id] = data[id]
+        }
+      })
+
+      setMedicalRecords(filteredRecords)
+    } catch (error) {
+      console.error("Error fetching medical records:", error)
+    } finally {
+      setIsLoadingMedicalRecords(false)
+    }
+  }
 
   // Handle patient selection
   const handlePatientChange = (patientId: string) => {
@@ -540,7 +581,7 @@ export function DoctorSymptomDashboard() {
 
       {selectedPatients.length > 0 && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-4">
+          <TabsList className="grid grid-cols-2 md:grid-cols-6 mb-4">
             <TabsTrigger value="overview">
               <BarChart2 className="mr-2 h-4 w-4" />
               Overview
@@ -560,6 +601,10 @@ export function DoctorSymptomDashboard() {
             <TabsTrigger value="details">
               <FileText className="mr-2 h-4 w-4" />
               Details
+            </TabsTrigger>
+            <TabsTrigger value="medical">
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Medical Records
             </TabsTrigger>
           </TabsList>
 
@@ -722,6 +767,51 @@ export function DoctorSymptomDashboard() {
                   timeRange={timeRange}
                   selectedSymptoms={selectedSymptoms}
                 />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="medical">
+            <div className="grid gap-6">
+              {selectedPatients.map((patient) => (
+                <div key={patient.patientId} className="space-y-4">
+                  {isLoadingMedicalRecords ? (
+                    <Card>
+                      <CardHeader>
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <Skeleton className="h-24 w-full" />
+                          <Skeleton className="h-24 w-full" />
+                          <Skeleton className="h-24 w-full" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : medicalRecords[patient.patientId] ? (
+                    <>
+                      <MedicalRecordSummary medicalRecord={medicalRecords[patient.patientId]} />
+
+                      <ConditionSymptomCorrelation
+                        medicalRecord={medicalRecords[patient.patientId]}
+                        symptomData={patient.symptoms}
+                      />
+                    </>
+                  ) : (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Activity className="mr-2 h-5 w-5 text-rose-500" />
+                          Medical Records
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">No medical records found for {patient.patientName}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               ))}
             </div>
           </TabsContent>
