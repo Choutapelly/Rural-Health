@@ -6,10 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar, Clock, FileText, MessageSquare, Video, Bell, User, LogOut } from "lucide-react"
+import { Calendar, Clock, FileText, MessageSquare, Video, Bell, User, LogOut, BarChart2 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { PrescriptionForm } from "@/components/prescription-form"
+import Link from "next/link"
 
 export default function DoctorDashboard() {
   const [pendingRequests, setPendingRequests] = useState([
@@ -108,6 +109,18 @@ export default function DoctorDashboard() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">Doctor Dashboard</h1>
           <div className="flex items-center gap-2">
+            <Link href="/dashboard/doctor/symptom-dashboard">
+              <Button variant="outline" size="sm">
+                <BarChart2 className="h-4 w-4 mr-2" />
+                Symptom Dashboard
+              </Button>
+            </Link>
+            <Link href="/dashboard/doctor/symptom-visualization">
+              <Button variant="outline" size="sm">
+                <BarChart2 className="h-4 w-4 mr-2" />
+                Symptom Visualization
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" className="relative">
               <Bell className="h-4 w-4" />
               {notifications.some((n) => !n.read) && (
@@ -316,6 +329,12 @@ export default function DoctorDashboard() {
                           <MessageSquare className="mr-2 h-4 w-4" />
                           Message
                         </Button>
+                        <Link href="/dashboard/doctor/symptom-dashboard">
+                          <Button variant="outline" size="sm">
+                            <BarChart2 className="mr-2 h-4 w-4" />
+                            View Symptoms
+                          </Button>
+                        </Link>
                         <Button variant="outline" size="sm">
                           <FileText className="mr-2 h-4 w-4" />
                           Patient Records
@@ -377,6 +396,12 @@ export default function DoctorDashboard() {
                           <FileText className="mr-2 h-4 w-4" />
                           View Summary
                         </Button>
+                        <Link href="/dashboard/doctor/symptom-dashboard">
+                          <Button variant="outline" size="sm">
+                            <BarChart2 className="mr-2 h-4 w-4" />
+                            View Symptoms
+                          </Button>
+                        </Link>
                         <Button variant="outline" size="sm">
                           <MessageSquare className="mr-2 h-4 w-4" />
                           Message Patient
