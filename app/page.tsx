@@ -47,7 +47,7 @@ export default function Home() {
                 </p>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Link href="/register?role=doctor">
-                    <Button className="w-full min-[400px]:w-auto">Volunteer as a Doctor</Button>
+                    <Button className="w-full min-[400px]:w-auto bg-black hover:bg-black/90">Volunteer as a Doctor</Button>
                   </Link>
                   <Link href="/register?role=patient">
                     <Button variant="outline" className="w-full min-[400px]:w-auto">
@@ -212,7 +212,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
                 <Link href="/register?role=doctor">
-                  <Button size="lg" className="w-full min-[400px]:w-auto">
+                  <Button size="lg" className="w-full min-[400px]:w-auto bg-black hover:bg-black/90">
                     Volunteer as a Doctor
                   </Button>
                 </Link>
