@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Heart, Globe, Video, FileText, Shield } from "lucide-react"
 import Image from "next/image"
-do
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
