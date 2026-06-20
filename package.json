@@ -66,6 +66,11 @@
     "vaul": "^0.9.6",
     "zod": "^3.24.1"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp"
+    ]
+  },
   "devDependencies": {
     "@types/node": "^22",
     "@types/react": "^19",
