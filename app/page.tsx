@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Heart, Globe, Video, FileText, Shield } from "lucide-react"
 import Image from "next/image"
-
+do
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -59,8 +59,9 @@ export default function Home() {
               <Image
                 src="/rural-telehealth-connection.png"
                 alt="Rural healthcare telemedicine"
-                width={500}
-                height={500}
+                width={800}
+                height={600}
+                priority={true}
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover"
               />
             </div>
