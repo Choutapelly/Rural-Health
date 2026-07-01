@@ -70,7 +70,7 @@ export default function RegisterPage() {
         return
       }
 
-      if (role === "doctor" && (!data.license || !data.specialty)) {
+      if (role === "doctor" && !data.license) {
         setError("Please fill in all doctor-specific fields")
         setLoading(false)
         return
@@ -175,7 +175,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="specialty">Specialty</Label>
+                  <Label htmlFor="specialty">Specialty (Optional)</Label>
                   <Select value={specialty} onValueChange={setSpecialty} disabled={loading}>
                     <SelectTrigger id="specialty" name="specialty">
                       <SelectValue placeholder="Select specialty" />
