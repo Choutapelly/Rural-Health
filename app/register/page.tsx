@@ -11,13 +11,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Heart } from "lucide-react"
+import { Heart, AlertCircle } from "lucide-react"
 
 export default function RegisterPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [role, setRole] = useState<string>("patient")
-  const [specialties, setSpecialties] = useState<string[]>([
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string>("")
+  const [specialty, setSpecialty] = useState<string>("")
+  const [specialties] = useState<string[]>([
     "General Practice",
     "Cardiology",
     "Dermatology",
@@ -37,10 +40,71 @@ export default function RegisterPage() {
     }
   }, [searchParams])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    // In a real app, we would handle form submission and API calls here
-    router.push(`/dashboard/${role}`)
+    setLoading(true)
+    setError("")
+
+    try {
+      const formData = new FormData(e.currentTarget)
+      const data = {
+        name: formData.get("name") as string,
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
+        role,
+        ...(role === "doctor" && {
+          license: formData.get("license") as string,
+          specialty: specialty || formData.get("specialty") as string,
+          languages: formData.get("languages") as string,
+        }),
+        ...(role === "patient" && {
+          location: formData.get("location") as string,
+          dob: formData.get("dob") as string,
+        }),
+      }
+
+      // Validate required fields
+      if (!data.name || !data.email || !data.password) {
+        setError("Please fill in all required fields")
+        setLoading(false)
+        return
+      }
+
+      if (role === "doctor" && (!data.license || !data.specialty)) {
+        setError("Please fill in all doctor-specific fields")
+        setLoading(false)
+        return
+      }
+
+      if (role === "patient" && (!data.location || !data.dob)) {
+        setError("Please fill in all patient-specific fields")
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setError(result.error || "Registration failed")
+        setLoading(false)
+        return
+      }
+
+      // Redirect to login page on success
+      router.push("/login")
+    } catch (err) {
+      console.error("Registration error:", err)
+      setError("An error occurred during registration. Please try again.")
+      setLoading(false)
+    }
   }
 
   return (
@@ -60,12 +124,19 @@ export default function RegisterPage() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="grid gap-4">
-            <RadioGroup defaultValue={role} onValueChange={setRole} className="grid grid-cols-2 gap-4">
+            {error && (
+              <div className="rounded-md border border-red-200 bg-red-50 p-3 flex gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            <RadioGroup value={role} onValueChange={setRole} className="grid grid-cols-2 gap-4">
               <div>
                 <RadioGroupItem value="patient" id="patient" className="peer sr-only" />
                 <Label
                   htmlFor="patient"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                 >
                   Patient
                 </Label>
@@ -74,7 +145,7 @@ export default function RegisterPage() {
                 <RadioGroupItem value="doctor" id="doctor" className="peer sr-only" />
                 <Label
                   htmlFor="doctor"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                 >
                   Doctor
                 </Label>
@@ -83,36 +154,36 @@ export default function RegisterPage() {
 
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" type="text" placeholder="John Doe" required />
+              <Input id="name" name="name" type="text" placeholder="John Doe" required disabled={loading} />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="m@example.com" required />
+              <Input id="email" name="email" type="email" placeholder="m@example.com" required disabled={loading} />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required />
+              <Input id="password" name="password" type="password" required disabled={loading} />
             </div>
 
             {role === "doctor" && (
               <>
                 <div className="grid gap-2">
                   <Label htmlFor="license">Medical License Number</Label>
-                  <Input id="license" type="text" placeholder="License #" required />
+                  <Input id="license" name="license" type="text" placeholder="License #" required disabled={loading} />
                 </div>
 
                 <div className="grid gap-2">
                   <Label htmlFor="specialty">Specialty</Label>
-                  <Select>
-                    <SelectTrigger id="specialty">
+                  <Select value={specialty} onValueChange={setSpecialty} disabled={loading}>
+                    <SelectTrigger id="specialty" name="specialty">
                       <SelectValue placeholder="Select specialty" />
                     </SelectTrigger>
                     <SelectContent>
-                      {specialties.map((specialty) => (
-                        <SelectItem key={specialty} value={specialty.toLowerCase().replace(/\s+/g, "-")}>
-                          {specialty}
+                      {specialties.map((spec) => (
+                        <SelectItem key={spec} value={spec}>
+                          {spec}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -121,7 +192,7 @@ export default function RegisterPage() {
 
                 <div className="grid gap-2">
                   <Label htmlFor="languages">Languages Spoken</Label>
-                  <Input id="languages" type="text" placeholder="English, Spanish, etc." />
+                  <Input id="languages" name="languages" type="text" placeholder="English, Spanish, etc." disabled={loading} />
                 </div>
               </>
             )}
@@ -130,19 +201,19 @@ export default function RegisterPage() {
               <>
                 <div className="grid gap-2">
                   <Label htmlFor="location">Location (Village/Region)</Label>
-                  <Input id="location" type="text" placeholder="Your location" required />
+                  <Input id="location" name="location" type="text" placeholder="Your location" required disabled={loading} />
                 </div>
 
                 <div className="grid gap-2">
                   <Label htmlFor="dob">Date of Birth</Label>
-                  <Input id="dob" type="date" required />
+                  <Input id="dob" name="dob" type="date" required disabled={loading} />
                 </div>
               </>
             )}
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full">
-              Create Account
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </CardFooter>
         </form>
