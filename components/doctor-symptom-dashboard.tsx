@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -38,6 +39,7 @@ import {
   Share2,
   ClipboardList,
   Activity,
+  Eye,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -481,26 +483,41 @@ export function DoctorSymptomDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="space-y-2">
               {filteredPatients.map((patient) => (
                 <div
                   key={patient.patientId}
-                  className={`flex items-center space-x-2 rounded-md border p-3 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between rounded-md border p-3 transition-colors ${
                     selectedPatientIds.includes(patient.patientId) ? "border-primary bg-primary/5" : "hover:bg-muted"
                   }`}
-                  onClick={() => handlePatientChange(patient.patientId)}
                 >
-                  <Checkbox
-                    checked={selectedPatientIds.includes(patient.patientId)}
-                    onCheckedChange={() => handlePatientChange(patient.patientId)}
-                    className="pointer-events-none"
-                  />
-                  <div className="grid gap-0.5">
-                    <Label className="cursor-pointer">{patient.patientName}</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {Object.keys(patient.symptoms).length} symptoms tracked
-                    </span>
+                  <div
+                    className="flex items-center space-x-2 flex-1 cursor-pointer"
+                    onClick={() => handlePatientChange(patient.patientId)}
+                  >
+                    <Checkbox
+                      checked={selectedPatientIds.includes(patient.patientId)}
+                      onCheckedChange={() => handlePatientChange(patient.patientId)}
+                      className="pointer-events-none"
+                    />
+                    <div className="grid gap-0.5">
+                      <Label className="cursor-pointer">{patient.patientName}</Label>
+                      <span className="text-xs text-muted-foreground">
+                        {Object.keys(patient.symptoms).length} symptoms tracked
+                      </span>
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="ml-2"
+                  >
+                    <Link href={`/dashboard/doctor/patient/${patient.patientId}`}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Link>
+                  </Button>
                 </div>
               ))}
             </div>

@@ -10,9 +10,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Trash2 } from "lucide-react"
 
-export function PrescriptionForm() {
+interface PrescriptionFormProps {
+  patientId?: string
+  patientName?: string
+}
+
+export function PrescriptionForm({ patientId, patientName }: PrescriptionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [selectedPatient, setSelectedPatient] = useState(patientId || "")
   const [medications, setMedications] = useState([{ name: "", dosage: "", frequency: "", duration: "" }])
 
   const addMedication = () => {
@@ -82,9 +88,9 @@ export function PrescriptionForm() {
       <div className="space-y-4">
         <div className="grid gap-2">
           <Label htmlFor="patient">Patient</Label>
-          <Select>
+          <Select value={selectedPatient} onValueChange={setSelectedPatient} disabled={!!patientId}>
             <SelectTrigger id="patient">
-              <SelectValue placeholder="Select patient" />
+              <SelectValue placeholder={patientName || "Select patient"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="john-smith">John Smith</SelectItem>
